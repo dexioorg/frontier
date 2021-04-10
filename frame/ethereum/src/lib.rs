@@ -99,7 +99,7 @@ pub trait Config: frame_system::Config<Hash=H256> + pallet_balances::Config + pa
 decl_storage! {
 	trait Store for Pallet<T: Config> as Ethereum {
 		/// Current building block's transactions and receipts.
-		Pending: Vec<(ethereum::Transaction, TransactionStatus, ethereum::Receipt)>;
+		pub Pending get(fn get_pending): Vec<(ethereum::Transaction, TransactionStatus, ethereum::Receipt)>;
 
 		/// The current Ethereum block.
 		CurrentBlock: Option<ethereum::Block>;
@@ -298,7 +298,7 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn logs_bloom(logs: Vec<Log>, bloom: &mut Bloom) {
+	pub fn logs_bloom(logs: Vec<Log>, bloom: &mut Bloom) {
 		for log in logs {
 			bloom.accrue(BloomInput::Raw(&log.address[..]));
 			for topic in log.topics {
