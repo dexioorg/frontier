@@ -99,7 +99,7 @@ pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backen
 	})?))
 }
 
-pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli) -> Result<
+pub fn new_partial(config: &mut Configuration, #[allow(unused_variables)] cli: &Cli) -> Result<
 	sc_service::PartialComponents<
 		FullClient, FullBackend, FullSelectChain,
 		sp_consensus::import_queue::BasicQueue<Block, sp_api::TransactionFor<FullClient, Block>>,
@@ -214,6 +214,20 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 			}
 		)?;
 
+		config
+			.network
+			.extra_sets
+			.push(sc_finality_grandpa::grandpa_peers_set_config());
+
+		config.network.request_response_protocols.push(
+			sc_finality_grandpa_warp_sync::request_response_config_for_chain(
+				&config,
+				task_manager.spawn_handle(),
+				backend.clone(),
+				grandpa_link.shared_authority_set().clone(),
+			),
+		);
+
 		Ok(sc_service::PartialComponents {
 			client, backend, task_manager, import_queue, keystore_container,
 			select_chain, transaction_pool, inherent_data_providers,
@@ -230,7 +244,7 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 
 /// Builds a new service for a full client.
 pub fn new_full(
-	config: Configuration,
+	mut config: Configuration,
 	cli: &Cli,
 ) -> Result<TaskManager, ServiceError> {
 	let enable_dev_signer = cli.run.enable_dev_signer;
@@ -239,7 +253,9 @@ pub fn new_full(
 		client, backend, mut task_manager, import_queue, keystore_container,
 		select_chain, transaction_pool, inherent_data_providers,
 		other: (consensus_result, pending_transactions, filter_pool, frontier_backend, mut telemetry),
-	} = new_partial(&config, cli)?;
+	} = new_partial(&mut config, cli)?;
+
+
 
 	let (network, network_status_sinks, system_rpc_tx, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
@@ -400,6 +416,7 @@ pub fn new_full(
 	}
 
 	#[cfg(feature = "aura")] {
+
 		let (aura_block_import, grandpa_link) = consensus_result;
 
 		if role.is_authority() {

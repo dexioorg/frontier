@@ -56,33 +56,33 @@ pub fn run() -> sc_cli::Result<()> {
 		},
 		Some(Subcommand::CheckBlock(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| {
+			runner.async_run(|mut config| {
 				let PartialComponents { client, task_manager, import_queue, ..}
-					= new_partial(&config, &cli)?;
+					= new_partial(&mut config, &cli)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
 		Some(Subcommand::ExportBlocks(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| {
+			runner.async_run(|mut config| {
 				let PartialComponents { client, task_manager, ..}
-					= new_partial(&config, &cli)?;
+					= new_partial(&mut config, &cli)?;
 				Ok((cmd.run(client, config.database), task_manager))
 			})
 		},
 		Some(Subcommand::ExportState(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| {
+			runner.async_run(|mut config| {
 				let PartialComponents { client, task_manager, ..}
-					= new_partial(&config, &cli)?;
+					= new_partial(&mut config, &cli)?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
 			})
 		},
 		Some(Subcommand::ImportBlocks(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| {
+			runner.async_run(|mut config| {
 				let PartialComponents { client, task_manager, import_queue, ..}
-					= new_partial(&config, &cli)?;
+					= new_partial(&mut config, &cli)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -92,9 +92,9 @@ pub fn run() -> sc_cli::Result<()> {
 		},
 		Some(Subcommand::Revert(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| {
+			runner.async_run(|mut config| {
 				let PartialComponents { client, task_manager, backend, ..}
-					= new_partial(&config, &cli)?;
+					= new_partial(&mut config, &cli)?;
 				Ok((cmd.run(client, backend), task_manager))
 			})
 		},
