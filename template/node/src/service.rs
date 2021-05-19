@@ -20,6 +20,7 @@ use sp_timestamp::InherentError;
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_cli::SubstrateCli;
 use futures::StreamExt;
+use sp_core::U256;
 
 use crate::cli::Cli;
 #[cfg(feature = "manual-seal")]
@@ -155,6 +156,10 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 			.register_provider(MockTimestampInherentDataProvider)
 			.map_err(Into::into)
 			.map_err(sp_consensus::error::Error::InherentData)?;
+		inherent_data_providers
+			.register_provider(pallet_dynamic_fee::InherentDataProvider(U256::from(cli.run.target_gas_price)))
+			.map_err(Into::into)
+			.map_err(sp_consensus::Error::InherentData)?;
 
 		let frontier_block_import = FrontierBlockImport::new(
 			client.clone(),
@@ -182,6 +187,11 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 	}
 
 	#[cfg(feature = "aura")] {
+		inherent_data_providers
+			.register_provider(pallet_dynamic_fee::InherentDataProvider(U256::from(cli.run.target_gas_price)))
+			.map_err(Into::into)
+			.map_err(sp_consensus::Error::InherentData)?;
+
 		let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
 			client.clone(),
 			&(client.clone() as Arc<_>),
@@ -277,6 +287,7 @@ pub fn new_full(
 		let pending = pending_transactions.clone();
 		let filter_pool = filter_pool.clone();
 		let frontier_backend = frontier_backend.clone();
+		let max_past_logs = cli.run.max_past_logs;
 
 		Box::new(move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
@@ -289,7 +300,8 @@ pub fn new_full(
 				pending_transactions: pending.clone(),
 				filter_pool: filter_pool.clone(),
 				backend: frontier_backend.clone(),
-				command_sink: Some(command_sink.clone())
+				max_past_logs,
+				command_sink: Some(command_sink.clone()),
 			};
 			crate::rpc::create_full(
 				deps,
