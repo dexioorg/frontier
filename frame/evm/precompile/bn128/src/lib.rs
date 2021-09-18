@@ -29,8 +29,8 @@ fn read_fr(input: &[u8], start_inx: usize) -> Result<bn::Fr, ExitError> {
 		return Err(ExitError::Other("Input not long enough".into()));
 	}
 
-	bn::Fr::from_slice(&input[start_inx..(start_inx + 32)])
-		.map_err(|_| ExitError::Other("Invalid field element".into()))
+	bn::Fr::from_slice(&input[start_inx..(start_inx + 32)]).map_err(|_| ExitError::Other("Invalid field element".into()))
+
 }
 
 fn read_point(input: &[u8], start_inx: usize) -> Result<bn::G1, ExitError> {
@@ -40,17 +40,15 @@ fn read_point(input: &[u8], start_inx: usize) -> Result<bn::G1, ExitError> {
 		return Err(ExitError::Other("Input not long enough".into()));
 	}
 
-	let px = Fq::from_slice(&input[start_inx..(start_inx + 32)])
-		.map_err(|_| ExitError::Other("Invalid point x coordinate".into()))?;
-	let py = Fq::from_slice(&input[(start_inx + 32)..(start_inx + 64)])
-		.map_err(|_| ExitError::Other("Invalid point y coordinate".into()))?;
-	Ok(if px == Fq::zero() && py == Fq::zero() {
-		G1::zero()
-	} else {
-		AffineG1::new(px, py)
-			.map_err(|_| ExitError::Other("Invalid curve point".into()))?
-			.into()
-	})
+	let px = Fq::from_slice(&input[start_inx..(start_inx + 32)]).map_err(|_| ExitError::Other("Invalid point x coordinate".into()))?;
+	let py = Fq::from_slice(&input[(start_inx + 32)..(start_inx + 64)]).map_err(|_| ExitError::Other("Invalid point y coordinate".into()))?;
+	Ok(
+		if px == Fq::zero() && py == Fq::zero() {
+			G1::zero()
+		} else {
+			AffineG1::new(px, py).map_err(|_| ExitError::Other("Invalid curve point".into()))?.into()
+		}
+	)
 }
 
 /// The Bn128Add builtin

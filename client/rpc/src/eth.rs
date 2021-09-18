@@ -881,19 +881,14 @@ where
 		let gas_limit = match gas {
 			Some(amount) => amount,
 			None => {
-				let block = self
-					.client
-					.runtime_api()
-					.current_block(&BlockId::Hash(hash))
+				let block = self.client.runtime_api().current_block(&BlockId::Hash(hash))
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
 				if let Some(block) = block {
 					block.header.gas_limit
 				} else {
-					return Err(internal_err(format!(
-						"block unavailable, cannot query gas limit"
-					)));
+					return Err(internal_err(format!("block unavailable, cannot query gas limit")));
 				}
-			}
+			},
 		};
 		let data = data.map(|d| d.0).unwrap_or_default();
 
@@ -977,8 +972,19 @@ where
 				nonce,
 			} = request;
 
-			// Use request gas limit only if it less than gas_limit parameter
-			let gas_limit = core::cmp::min(gas.unwrap_or(gas_limit), gas_limit);
+			// use given gas limit or query current block's limit
+			let gas_limit = match gas {
+				Some(amount) => amount,
+				None => {
+					let block = self.client.runtime_api().current_block(&BlockId::Hash(hash))
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					if let Some(block) = block {
+						block.header.gas_limit
+					} else {
+						return Err(internal_err(format!("block unavailable, cannot query gas limit")));
+					}
+				},
+			};
 
 			let data = data.map(|d| d.0).unwrap_or_default();
 
